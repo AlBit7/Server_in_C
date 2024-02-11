@@ -83,6 +83,7 @@ Request_t receveFromClient(Socket_t soc) {
                 request.methodSetted = true;
             } else if (!request.uriSetted) { // if I still heve to fill uri in
                 strncpy(request.uri, buffer, i);
+                request.uri[i+1] = '\0';
                 request.uriSetted = true;
                 return request;
             }
