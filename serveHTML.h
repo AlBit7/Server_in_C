@@ -11,22 +11,50 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <stdbool.h>
 
 #define PORT 9999
 #define MAX_CONNECTIONS 10
 
-#define PATH_TO_HTML "/home/albi/Desktop/Universita/OS - sistemas operativos/practica/practica 2/es1/pagina/index.html"
-#define PATH_TO_PAGE "/home/albi/Desktop/Universita/OS - sistemas operativos/practica/practica 2/es1/pagina"
+#define PATH_TO_PAGE "/home/albi/Desktop/albi/programmi/Server_in_C"
 #define SIZE_MAX 100
 #define MAX_MESSAGE_SIZE 100
 #define IP_GOOGLE "142.250.200.100"
 #define HTML_PORT 80 // 443 con https
+#define BUFF 1024
 
 // errors
 #define FAIL -1
 #define SUCCESS 0
 #define handleError(msg) \
     do { perror(msg); exit(FAIL); } while (0)
+
+// methods
+#define GET 1
+#define POST 2
+#define NOT_SUPPORTED 0
+
+// data structures
+typedef int Socket_t; // to represent socket
+
+typedef struct { // to represent address
+    struct sockaddr_in addr;
+    socklen_t len;
+} Address_t; 
+
+typedef struct { // to represent client's request
+    char uri[BUFF];
+    unsigned short method;
+    bool methodSetted;
+    bool uriSetted;
+} Request_t;
+
+Socket_t  initSocket();
+Address_t initAddress(bool);
+void      bindStA(Socket_t, Address_t*);
+void      listenS(Socket_t);
+Socket_t  acceptSgA(Socket_t, Address_t*);
+Request_t receveFromClient(Socket_t);
 
 void child(int);
 void serviHTML(char*, int);

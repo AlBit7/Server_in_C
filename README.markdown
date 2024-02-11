@@ -12,12 +12,12 @@ Socket s = initSocket();
 Address serverAddr = initAddress();
 Address serverAddr = initAddress();
 
-bindStA(s, serverAddr);
+bindStA(s, &serverAddr);
 
 listenS(s);
 
 while(1)
-    Socket client = acceptSgA(s, clientAddr);
+    Socket client = acceptSgA(s, &clientAddr);
     Request requestFromClient = receveFromClient(client);
 
 

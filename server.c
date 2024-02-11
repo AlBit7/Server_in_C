@@ -22,31 +22,17 @@ int main() {
     //  (3)  A willingness to accept incoming connections and a queue limit for incoming connections are specified with listen().
     //  (4)  Connections are accepted with accept(2).
 
-    // --------------- INIT ---------------
-
-    // create the two addresses structs for server and to reference client
-    struct sockaddr_in serverAddress, clientAddress;
-    // init the lengths of the addresses (for bind and accept)
-    socklen_t lenServerSocket = sizeof(serverAddress);
-    socklen_t lenClientSocket = sizeof(clientAddress);
-    // init the serverAddress
-    serverAddress.sin_family = AF_INET;         // server uses IPv4
-    serverAddress.sin_addr.s_addr = INADDR_ANY; // accept any incoming connections
-    serverAddress.sin_port = htons(PORT);       // on the port PORT
-
-    // --------------- CONNECTING THE SOCKET ---------------
-
-    // creating socket
-    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocket == -1) handleError("socket");
+    // init phase
+    Address_t serverAddress = initAddress(true);
+    Address_t clientAddress = initAddress(false);
+    Socket_t  serverSocket  = initSocket();
 
     // binding serverSocket to the address
-    if (bind(serverSocket, (struct sockaddr *)&serverAddress, lenServerSocket)) handleError("bind");
-    // now the address is binded to the socket
+    bindStA(serverSocket, &serverAddress);
 
     // listen the socket file descriptor for incoming connections
     // if more then MAX_CONNECTIONS arrive the server will refuse to connect
-    if (listen(serverSocket, MAX_CONNECTIONS)) handleError("listen");
+    listenS(serverSocket);
     puts("listening ...");
 
     // --------------- ACCEPTING CONNECTIONS ---------------
@@ -54,39 +40,22 @@ int main() {
     while (1) {
 
         // accepting a connection socket and storing its address in clientAddress:
-        int clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddress, &lenClientSocket);
-        if (clientSocket == -1) handleError("accept");
+        Socket_t clientSocket = acceptSgA(serverSocket, &clientAddress);
 
         // creating a child process to handle the client connection
         pid_t pid = fork();
         if (pid == -1) handleError("fork");
-        else if (pid == 0) {
+        else if (pid == 0) { // child process
+            close(serverSocket);  // child doesn't need the listener
 
             // reading the request URI
-            char requestBuffer[1024];
-            ssize_t bytesRead = recv(clientSocket, requestBuffer, sizeof(requestBuffer), 0);
-            if (bytesRead == -1) handleError("recv");
-            if (bytesRead == 0) {
-                close(clientSocket);
-                continue;
-            }
-            requestBuffer[bytesRead] = '\0'; // Null-terminate the buffer
+            Request_t requestFromClient = receveFromClient(clientSocket);
 
-            // Parse the URI from the request
-            char *uri = parseURI(requestBuffer);
-            if (uri == NULL) {
-                // Handle invalid request
-                close(clientSocket);
-                continue;
-            }
-
-            printf("%d:%d: %s\n", clientAddress.sin_addr.s_addr, clientAddress.sin_port, uri);
-            // child process
-            close(serverSocket);  // child doesn't need the listener
+            printf("%d:%d: <%s>\n", clientAddress.addr.sin_addr.s_addr, clientAddress.addr.sin_port, requestFromClient.uri);
 
             // what page should I serve?
             // and serve it!
-            serviHTML(routeURI(uri), clientSocket);
+            serviHTML(routeURI(requestFromClient.uri), clientSocket);
 
             close(clientSocket);  // close client socket at the end
             exit(SUCCESS);        // child dies

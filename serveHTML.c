@@ -1,5 +1,103 @@
 #include "serveHTML.h"
 
+Socket_t initSocket() {
+
+    Socket_t soc = socket(AF_INET, SOCK_STREAM, 0);
+    if (soc == -1) handleError("socket");
+
+    return soc;
+
+}
+
+Address_t initAddress(bool isServer) {
+
+    Address_t address;
+
+    if (isServer) {
+        address.addr.sin_family = AF_INET;         // server uses IPv4
+        address.addr.sin_addr.s_addr = INADDR_ANY; // accept any incoming connections
+        address.addr.sin_port = htons(PORT);       // on the port PORT
+    }
+
+    address.len = sizeof(address.addr);
+
+    return address;
+
+}
+
+void bindStA(Socket_t soc, Address_t *addr) {
+    if (
+        bind(
+            (int)soc, 
+            (struct sockaddr *)&addr->addr, 
+            addr->len
+        )
+    ) handleError("bind");
+}
+
+void listenS(Socket_t soc) {
+    if (listen(soc, MAX_CONNECTIONS)) handleError("listen");
+}
+
+Socket_t acceptSgA(Socket_t soc, Address_t *address) {
+
+    Socket_t clientSocket = (Socket_t)accept((int)soc, (struct sockaddr *)&address->addr, &address->len);
+    if (clientSocket == -1) handleError("accept");
+
+    return clientSocket;
+
+}
+
+Request_t receveFromClient(Socket_t soc) {
+
+    // init
+    Request_t request;
+    request.methodSetted = false;
+    request.uriSetted = false;
+
+    // get request string
+    char requestBuffer[BUFF];
+    ssize_t bytesRead = recv(soc, requestBuffer, sizeof(requestBuffer), 0);
+    if (bytesRead == -1) handleError("recv");
+    if (bytesRead == 0) {
+        close(soc); // the client sent an empty request
+        puts("client sent empty reques");
+    }
+    requestBuffer[bytesRead] = '\0'; // Null-terminate the buffer
+
+    // parse the client request and fill out request variable
+    size_t i = 0;
+    char buffer[BUFF] = { 0 };
+    for (char *c = requestBuffer; *c; ++c) {
+
+        // the idea is to iterate with another buffer to get 
+        if (*c != ' ') buffer[i++] = *c; // add in buffer
+        else { // when I find space
+            buffer[i] = '\0'; // add terminator
+
+            // if I still heve to fill method in
+            if (!request.methodSetted) {
+                if (!strcmp(buffer, "GET")) request.method = GET;
+                else if (!strcmp(buffer, "POST")) request.method = POST;
+                else request.method = NOT_SUPPORTED;
+                request.methodSetted = true;
+            } else if (!request.uriSetted) { // if I still heve to fill uri in
+                strncpy(request.uri, buffer, i);
+                request.uriSetted = true;
+                return request;
+            }
+
+            i = 0; // reset buffer load at 0
+        }
+
+    }
+
+}
+
+
+
+
+
 void child(int clientSocket) {
 
     // connect to google as a client
@@ -58,9 +156,9 @@ char *routeURI(char *uri) {
 
     // ToDo implement a map to link requested with served
 
-    if (!strcmp(uri, "/") || !strcmp(uri, "/index.html"))
+    if (!strcmp(uri, "/#") || !strcmp(uri, "/") || !strcmp(uri, "/index.html"))
         strcpy(uri, "/index.html");
-    else if (!strcmp(uri, "/static/style.css"))
+    else if (!strcmp(uri, "/style.css") || !strcmp(uri, "/static/style.css"))
         strcpy(uri, "/static/style.css");
     else if (!strcmp(uri, "/favicon.ico"))
         strcpy(uri, "/static/favicon.ico");
