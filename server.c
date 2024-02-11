@@ -86,7 +86,7 @@ int main() {
 
             // what page should I serve?
             // and serve it!
-            serveHTML(routeURI(uri), clientSocket);
+            serviHTML(routeURI(uri), clientSocket);
 
             close(clientSocket);  // close client socket at the end
             exit(SUCCESS);        // child dies
