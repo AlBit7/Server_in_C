@@ -8,9 +8,11 @@ Now it's still early on fase
 
 super easy:
 
-> chmod +x make.bash
-> ./make.bash
-> ./server
+```
+chmod +x make.bash
+./make.bash
+./server
+```
 
 And start serving!
 
@@ -18,18 +20,19 @@ And start serving!
 
 Sarebbe utile creare una struttura dati per gestire address e socket contemporaneamente un qualcosa del tipo:
 
-> Socket s = initSocket();
-> Address serverAddr = initAddress();
-> Address serverAddr = initAddress();
-> 
-> bindStA(s, &serverAddr);
-> 
-> listenS(s);
-> 
-> while(1)
->    Socket client = acceptSgA(s, &clientAddr);
->    Request requestFromClient = receveFromClient(client);
+```
+Socket s = initSocket();
+Address serverAddr = initAddress();
+Address serverAddr = initAddress();
 
+bindStA(s, &serverAddr);
+
+listenS(s);
+
+while(1)
+   Socket client = acceptSgA(s, &clientAddr);
+   Request requestFromClient = receveFromClient(client);
+```
 
 ### Routing
 
