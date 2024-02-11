@@ -17,6 +17,8 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include "serveHTML.h"
+
 #define PORT 9999
 #define MAX_CONNECTIONS 10
 
@@ -33,7 +35,7 @@
     do { perror(msg); exit(FAIL); } while (0)
 
 void child(int);
-void serveHTML(char*, int);
+void serviHTML(char*, int);
 char *parseURI(const char*);
 char *routeURI(char*);
 char *concatenaStringhe(const char*, const char*);
@@ -201,7 +203,7 @@ char *routeURI(char *uri) {
 
 }
 
-void serveHTML(char *path, int socket) {
+void serviHTML(char *path, int socket) {
 
     // read archive: 
     int file = open(path, O_RDONLY);
