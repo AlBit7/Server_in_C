@@ -4,17 +4,24 @@
 
 Now it's still early on fase
 
-come fare: 
-- creare una libreria con gli headers + macro
-- creare il make file per compilare tutto
-- pensare ad un modo per interfacciarsi con tutto
+### Vision
 
-Creare una socket:
+Sarebbe utile creare una struttura dati per gestire address e socket contemporaneamente un qualcosa del tipo:
 
-socklen_t initAddress(uint16_t port);
-socklen_t lenSocket = initAddress(PORT);
+Socket s = initSocket();
+Address serverAddr = initAddress();
+Address serverAddr = initAddress();
 
-int initSocket();
-int socket = initSocket();
+bindStA(s, serverAddr);
 
-Sarebbe utile creare una struttura dati per gestire address e socket contemporaneamente
+listenS(s);
+
+while(1)
+    Socket client = acceptSgA(s, clientAddr);
+    Request requestFromClient = receveFromClient(client);
+
+
+### Routing
+
+Ora devo preparare la parte del routing:
+arriva una stringa e io devo dire che file intende e rispondere a seconda di cosa deve servire il server
