@@ -44,11 +44,44 @@ arriva una stringa e io devo dire che file intende e rispondere a seconda di cos
 devo a vere un modo per gestire GET e POST
 GET basta mangargli 
 
-idealmente vorrei delle funzioni (come falsk) che gestiscono i vari tipi di richieste. 
-Dinamica: 
-- arriva la richiesta
-- la parso con "abc = receveFromClient()" questo mi ritorna tutti i dati parsati
-- capire cosa fare con quella richiesta -> "routeURI(abc)" posso quindi chiamare una funzione che è fatta per gestire quel tipo di richiesta
-- la funzione "handler..." risponde alla richiesta con una pagina specifica o delle operazioni che servono all'utente
+creazione della funzione di gestione delle richieste:
+```
+Responce_t manageRequest(Request_t request) {
 
-In più fare un funzione send() che manda al browser dei dati
+    Responce_t responce;
+
+    // is request GET, POST or ...?
+    switch (request.method) {
+    
+        case GET:
+            responce.headers = "HTTP/1.1 200 OK bruh adesso ti mando tutto";
+            responce.contenuto = fileToText(routeURI(request.uri)); // file serving service
+            break;
+
+        case POST:
+            responce.headers = "HTTP/1.1 405 Bruh va che POST non so ancora gestirlo";
+            responce.contenuto = request.body; // just repete body in responce
+            break;
+    
+        default:
+            responce.headers = "HTTP/1.1 405 Cabbo vuoi fare?";
+            responce.contenuto = "deh va che hai mandato un metodo che non conosco";
+            break;
+    }
+
+    return responce;
+
+}
+```
+la risposta viene poi mandata alla funzione sendR() che invia la risposta alla socket che ha inviato la richiesta:
+```
+// reading the request URI
+Request_t requestFromClient = receveFromClient(clientSocket);
+
+// create responce from request
+Responce_t responce = manageRequest(requestFromClient);
+
+// send responce
+sendR(clientSocket, responce);
+```
+Questo è più o meno lo schema generale per rispondere alle richieste 

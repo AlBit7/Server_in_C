@@ -132,8 +132,6 @@ Responce_t manageRequest(Request_t request) {
             break;
     }
 
-    //printf("%s\n%s\n\n", responce.headers, responce.contenuto);
-
     return responce;
 
 }
