@@ -49,12 +49,20 @@ typedef struct { // to represent client's request
     bool uriSetted;
 } Request_t;
 
+typedef struct {
+    char *headers;
+    char *contenuto;
+} Responce_t;
+
+
 Socket_t  initSocket();
 Address_t initAddress(bool);
 void      bindStA(Socket_t, Address_t*);
 void      listenS(Socket_t);
 Socket_t  acceptSgA(Socket_t, Address_t*);
 Request_t receveFromClient(Socket_t);
+void      manageRequest(Socket_t, Request_t);
+void      send(Socket_t, Responce_t);
 
 void child(int);
 void serviHTML(char*, int);

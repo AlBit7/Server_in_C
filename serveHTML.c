@@ -87,6 +87,8 @@ Request_t receveFromClient(Socket_t soc) {
                 request.uriSetted = true;
                 return request;
             }
+            // poi posso aggiungere altre informazioni 
+            // che estraggo dalla richiesta ...
 
             i = 0; // reset buffer load at 0
         }
@@ -95,9 +97,144 @@ Request_t receveFromClient(Socket_t soc) {
 
 }
 
+void manageRequest(Socket_t clientSocket, Request_t request) {
 
+    // manege the request and send data to specific function that handles it
 
+    // is request GET, POST or ...?
+    switch (request.method) {
+    
+        case GET:
+            /* code */
+            break;
 
+        case POST:
+            /* code */
+            break;
+    
+        default:
+            Responce_t responce = {
+                .headers = "",
+                .contenuto = ""
+            };
+            send(clientSocket, responce);
+            break;
+    }
+
+}
+
+// function that sends a responce type to a socket 
+void send(Socket_t socket, Responce_t responce) {
+
+    ssize_t bytes_written = 0;
+
+    // write the header:
+    bytes_written = write(socket, responce.headers, strlen(responce.headers));
+    if (bytes_written == -1) handleError("write");
+
+    // write contents:
+    bytes_written = write(socket, responce.contenuto, strlen(responce.contenuto));
+    if (bytes_written == -1) handleError("write");
+
+}
+
+char *routeURI(char *uri) {
+
+    // ToDo implement a map to link requested with served
+
+    if (!strcmp(uri, "/#") || !strcmp(uri, "/") || !strcmp(uri, "/index.html"))
+        strcpy(uri, "/index.html");
+    else if (!strcmp(uri, "/style.css") || !strcmp(uri, "/static/style.css"))
+        strcpy(uri, "/static/style.css");
+    else if (!strcmp(uri, "/favicon.ico"))
+        strcpy(uri, "/static/favicon.ico");
+    else if (!strcmp(uri, "/JS/main.js"))
+        strcpy(uri, "/JS/main.js");
+    else
+        strcpy(uri, "/notFound.html");
+
+    //printf("serving: %s\n", uri);
+    return concatenaStringhe(PATH_TO_PAGE, uri);
+
+}
+
+void serviHTML(char *path, int socket) {
+
+    // read archive: 
+    int file = open(path, O_RDONLY);
+    if (file < 0) handleError("file opening: ");
+
+    // sending the headers ... with keepalive ...
+    char *header = "HTTP/1.1 200 OK\nConnection: keep-alive\n\n";
+    write(socket, header, strlen(header));
+
+    // buffer of SIZE_MAX bytes
+    char tmp_bytes[SIZE_MAX] = { 0 };
+    ssize_t bytes_read;
+    ssize_t sent;
+
+    // read the file SIZE_MAX bytes at a time and send it to the client
+    do {
+
+        // fresh init of buffer
+        for (size_t i = 0; i < SIZE_MAX; ++i) tmp_bytes[i] = 0;
+        
+        // read and check
+        bytes_read = read(file, tmp_bytes, SIZE_MAX);
+        if (bytes_read == -1) handleError("read");
+
+        sent += bytes_read;
+        
+        // send to the client if some bytes are read
+        if (bytes_read) {
+            ssize_t bytes_written = write(socket, tmp_bytes, bytes_read);
+            if (bytes_written == -1) handleError("write");
+        }
+
+    } while (bytes_read);
+
+    // printf("message sent: %ld bytes\n", sent);
+
+}
+
+char *concatenaStringhe(const char *str1, const char *str2) {
+    // Calcola la lunghezza totale della stringa risultante
+    int len1 = 0;
+    while (str1[len1] != '\0') {
+        len1++;
+    }
+
+    int len2 = 0;
+    while (str2[len2] != '\0') {
+        len2++;
+    }
+
+    int len_totale = len1 + len2;
+
+    // Alloca memoria per la stringa risultante
+    char *concatenata = (char *)malloc((len_totale + 1) * sizeof(char)); // +1 per il terminatore di stringa '\0'
+    if (concatenata == NULL) {
+        // Gestione dell'errore di allocazione di memoria
+        perror("Errore di allocazione di memoria");
+        exit(FAIL);
+    }
+
+    // Copia la prima stringa nella stringa risultante
+    for (int i = 0; i < len1; i++) {
+        concatenata[i] = str1[i];
+    }
+
+    // Concatena la seconda stringa alla fine della prima stringa
+    for (int i = 0; i < len2; i++) {
+        concatenata[len1 + i] = str2[i];
+    }
+
+    concatenata[len_totale] = '\0'; // Aggiungi il terminatore di stringa
+
+    return concatenata;
+}
+
+// DEPRECATED
 
 void child(int clientSocket) {
 
@@ -153,65 +290,6 @@ void child(int clientSocket) {
 
 }
 
-char *routeURI(char *uri) {
-
-    // ToDo implement a map to link requested with served
-
-    if (!strcmp(uri, "/#") || !strcmp(uri, "/") || !strcmp(uri, "/index.html"))
-        strcpy(uri, "/index.html");
-    else if (!strcmp(uri, "/style.css") || !strcmp(uri, "/static/style.css"))
-        strcpy(uri, "/static/style.css");
-    else if (!strcmp(uri, "/favicon.ico"))
-        strcpy(uri, "/static/favicon.ico");
-    else if (!strcmp(uri, "/JS/main.js"))
-        strcpy(uri, "/JS/main.js");
-    else
-        strcpy(uri, "/notFound.html");
-
-    printf("serving: %s\n", uri);
-    return concatenaStringhe(PATH_TO_PAGE, uri);
-
-}
-
-void serviHTML(char *path, int socket) {
-
-    // read archive: 
-    int file = open(path, O_RDONLY);
-    if (file < 0) handleError("file opening: ");
-
-    // sending the headers ... with keepalive ...
-    char *header = "HTTP/1.1 200 OK\nConnection: keep-alive\n\n";
-    write(socket, header, strlen(header));
-
-    // buffer of SIZE_MAX bytes
-    char tmp_bytes[SIZE_MAX] = { 0 };
-    ssize_t bytes_read;
-    ssize_t sent;
-
-    // read the file SIZE_MAX bytes at a time and send it to the client
-    do {
-
-        // fresh init of buffer
-        for (size_t i = 0; i < SIZE_MAX; ++i) tmp_bytes[i] = 0;
-        
-        // read and check
-        bytes_read = read(file, tmp_bytes, SIZE_MAX);
-        if (bytes_read == -1) handleError("read");
-
-        sent += bytes_read;
-        
-        // send to the client if some bytes are read
-        if (bytes_read) {
-            ssize_t bytes_written = write(socket, tmp_bytes, bytes_read);
-            if (bytes_written == -1) handleError("write");
-        }
-
-    } while (bytes_read);
-
-    // printf("message sent: %ld bytes\n", sent);
-
-}
-
 char *parseURI(const char *request) {
     
     const char *start = strstr(request, "GET ");
@@ -230,41 +308,4 @@ char *parseURI(const char *request) {
     
     return uri;
 
-}
-
-char *concatenaStringhe(const char *str1, const char *str2) {
-    // Calcola la lunghezza totale della stringa risultante
-    int len1 = 0;
-    while (str1[len1] != '\0') {
-        len1++;
-    }
-
-    int len2 = 0;
-    while (str2[len2] != '\0') {
-        len2++;
-    }
-
-    int len_totale = len1 + len2;
-
-    // Alloca memoria per la stringa risultante
-    char *concatenata = (char *)malloc((len_totale + 1) * sizeof(char)); // +1 per il terminatore di stringa '\0'
-    if (concatenata == NULL) {
-        // Gestione dell'errore di allocazione di memoria
-        perror("Errore di allocazione di memoria");
-        exit(FAIL);
-    }
-
-    // Copia la prima stringa nella stringa risultante
-    for (int i = 0; i < len1; i++) {
-        concatenata[i] = str1[i];
-    }
-
-    // Concatena la seconda stringa alla fine della prima stringa
-    for (int i = 0; i < len2; i++) {
-        concatenata[len1 + i] = str2[i];
-    }
-
-    concatenata[len_totale] = '\0'; // Aggiungi il terminatore di stringa
-
-    return concatenata;
 }
