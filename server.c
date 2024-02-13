@@ -53,11 +53,11 @@ int main() {
 
             printf("%d:%d: <%s>\n", clientAddress.addr.sin_addr.s_addr, clientAddress.addr.sin_port, requestFromClient.uri);
 
-            manageRequest(clientSocket, requestFromClient);
-
-            // what page should I serve?
-            // and serve it!
-            //serviHTML(routeURI(requestFromClient.uri), clientSocket);
+            // create responce from request
+            Responce_t responce = manageRequest(requestFromClient);
+            
+            // send responce
+            sendR(clientSocket, responce);
 
             close(clientSocket);  // close client socket at the end
             exit(SUCCESS);        // child dies

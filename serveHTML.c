@@ -83,7 +83,7 @@ Request_t receveFromClient(Socket_t soc) {
                 request.methodSetted = true;
             } else if (!request.uriSetted) { // if I still heve to fill uri in
                 strncpy(request.uri, buffer, i);
-                request.uri[i+1] = '\0';
+                request.uri[i] = '\0';
                 request.uriSetted = true;
                 return request;
             }
@@ -97,40 +97,49 @@ Request_t receveFromClient(Socket_t soc) {
 
 }
 
-void manageRequest(Socket_t clientSocket, Request_t request) {
+// from the request create a responce 
+Responce_t manageRequest(Request_t request) {
 
-    // manege the request and send data to specific function that handles it
+    printf("%d %s\n", request.method, request.uri);
+
+    Responce_t responce;
 
     // is request GET, POST or ...?
     switch (request.method) {
     
         case GET:
-            /* code */
+            responce.headers = "HTTP/1.1 200 OK bruh adesso ti mando tutto";
+            responce.contenuto = fileToText(routeURI(request.uri));
             break;
 
         case POST:
-            /* code */
+            responce.headers = "HTTP/1.1 405 Bruh va che POST non so ancora gestirlo";
+            responce.contenuto = "";
             break;
     
         default:
-            Responce_t responce = {
-                .headers = "",
-                .contenuto = ""
-            };
-            send(clientSocket, responce);
+            responce.headers = "HTTP/1.1 405 Cabbo vuoi fare?";
+            responce.contenuto = "";
             break;
     }
+
+    printf("%s\n%s\n\n", responce.headers, responce.contenuto);
+
+    return responce;
 
 }
 
 // function that sends a responce type to a socket 
-void send(Socket_t socket, Responce_t responce) {
+void sendR(Socket_t socket, Responce_t responce) {
 
     ssize_t bytes_written = 0;
 
     // write the header:
     bytes_written = write(socket, responce.headers, strlen(responce.headers));
     if (bytes_written == -1) handleError("write");
+
+    // Invia una riga vuota come separatore tra l'header e il body
+    write(socket, "\r\n\r\n", 4);
 
     // write contents:
     bytes_written = write(socket, responce.contenuto, strlen(responce.contenuto));
@@ -142,9 +151,9 @@ char *routeURI(char *uri) {
 
     // ToDo implement a map to link requested with served
 
-    if (!strcmp(uri, "/#") || !strcmp(uri, "/") || !strcmp(uri, "/index.html"))
+    if (!strcmp(uri, "/+") || !strcmp(uri, "/") || !strcmp(uri, "/index.html"))
         strcpy(uri, "/index.html");
-    else if (!strcmp(uri, "/style.css") || !strcmp(uri, "/static/style.css"))
+    else if (!strcmp(uri, "style.css") || !strcmp(uri, "/static/style.css"))
         strcpy(uri, "/static/style.css");
     else if (!strcmp(uri, "/favicon.ico"))
         strcpy(uri, "/static/favicon.ico");
@@ -196,6 +205,34 @@ void serviHTML(char *path, int socket) {
     // printf("message sent: %ld bytes\n", sent);
 
 }
+
+char *fileToText(char *path) {
+
+    int file = open(path, O_RDONLY);
+    if (file < 0) handleError("file opening: ");
+
+    // Ottieni la dimensione del file
+    off_t size = lseek(file, 0, SEEK_END);
+    lseek(file, 0, SEEK_SET);
+
+    // Alloca memoria per il contenuto del file
+    char *content = malloc(size + 1);
+    if (!content) handleError("memory allocation");
+
+    // Leggi il contenuto del file
+    ssize_t bytes_read = read(file, content, size);
+    if (bytes_read < 0) handleError("file read error");
+
+    // Aggiungi terminatore di stringa
+    content[bytes_read] = '\0';
+
+    // Chiudi il file
+    close(file);
+
+    return content;
+
+}
+
 
 char *concatenaStringhe(const char *str1, const char *str2) {
     // Calcola la lunghezza totale della stringa risultante
