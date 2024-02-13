@@ -47,6 +47,7 @@ typedef struct { // to represent client's request
     unsigned short method;
     bool methodSetted;
     bool uriSetted;
+    char *body;
 } Request_t;
 
 typedef struct {

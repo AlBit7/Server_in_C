@@ -85,7 +85,7 @@ Request_t receveFromClient(Socket_t soc) {
                 strncpy(request.uri, buffer, i);
                 request.uri[i] = '\0';
                 request.uriSetted = true;
-                return request;
+                break;
             }
             // poi posso aggiungere altre informazioni 
             // che estraggo dalla richiesta ...
@@ -95,12 +95,21 @@ Request_t receveFromClient(Socket_t soc) {
 
     }
 
+    // parse client request to get body if method is POST
+    if(request.method == POST) {
+        char* bodyStart = strstr(requestBuffer, "\r\n\r\n");
+        if(bodyStart != NULL) 
+            request.body = bodyStart + strlen("\r\n\r\n");
+        else
+            request.body = "boh, non mi hai mandato niente?!";
+    }
+
+    return request;
+
 }
 
 // from the request create a responce 
 Responce_t manageRequest(Request_t request) {
-
-    printf("%d %s\n", request.method, request.uri);
 
     Responce_t responce;
 
@@ -109,21 +118,21 @@ Responce_t manageRequest(Request_t request) {
     
         case GET:
             responce.headers = "HTTP/1.1 200 OK bruh adesso ti mando tutto";
-            responce.contenuto = fileToText(routeURI(request.uri));
+            responce.contenuto = fileToText(routeURI(request.uri)); // file serving service
             break;
 
         case POST:
             responce.headers = "HTTP/1.1 405 Bruh va che POST non so ancora gestirlo";
-            responce.contenuto = "";
+            responce.contenuto = request.body; // just repete body in responce
             break;
     
         default:
             responce.headers = "HTTP/1.1 405 Cabbo vuoi fare?";
-            responce.contenuto = "";
+            responce.contenuto = "deh va che hai mandato un metodo che non conosco";
             break;
     }
 
-    printf("%s\n%s\n\n", responce.headers, responce.contenuto);
+    //printf("%s\n%s\n\n", responce.headers, responce.contenuto);
 
     return responce;
 
