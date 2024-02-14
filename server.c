@@ -51,7 +51,7 @@ int main() {
             // reading the request URI
             Request_t requestFromClient = receveFromClient(clientSocket);
 
-            printf("%d:%d: <%s>\n", clientAddress.addr.sin_addr.s_addr, clientAddress.addr.sin_port, requestFromClient.uri);
+            printf("%s:%d %s <%s>\n", inet_ntoa(clientAddress.addr.sin_addr), ntohs(clientAddress.addr.sin_port), (requestFromClient.method == GET) ? "GET": (requestFromClient.method == POST) ? "POST": (requestFromClient.method == PUT) ? "PUT": "?", requestFromClient.uri);
 
             // create responce from request
             Responce_t responce = manageRequest(requestFromClient);

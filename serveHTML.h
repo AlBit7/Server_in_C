@@ -32,6 +32,7 @@
 // methods
 #define GET 1
 #define POST 2
+#define PUT 3
 #define NOT_SUPPORTED 0
 
 // data structures

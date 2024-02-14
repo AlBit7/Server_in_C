@@ -79,6 +79,7 @@ Request_t receveFromClient(Socket_t soc) {
             if (!request.methodSetted) {
                 if (!strcmp(buffer, "GET")) request.method = GET;
                 else if (!strcmp(buffer, "POST")) request.method = POST;
+                else if (!strcmp(buffer, "PUT")) request.method = PUT;
                 else request.method = NOT_SUPPORTED;
                 request.methodSetted = true;
             } else if (!request.uriSetted) { // if I still heve to fill uri in
@@ -95,15 +96,13 @@ Request_t receveFromClient(Socket_t soc) {
 
     }
 
-    // parse client request to get body if method is POST
-    if(request.method == POST) {
-        char* bodyStart = strstr(requestBuffer, "\r\n\r\n");
-        if(bodyStart != NULL) 
-            request.body = bodyStart + strlen("\r\n\r\n");
-        else
-            request.body = "boh, non mi hai mandato niente?!";
-    }
-
+    // parse client request to get body (if there is one)
+    char* bodyStart = strstr(requestBuffer, "\r\n\r\n");
+    if(bodyStart != NULL) 
+        request.body = bodyStart + strlen("\r\n\r\n");
+    else
+        request.body = "";
+    
     return request;
 
 }
@@ -123,6 +122,11 @@ Responce_t manageRequest(Request_t request) {
 
         case POST:
             responce.headers = "HTTP/1.1 405 Bruh va che POST non so ancora gestirlo";
+            responce.contenuto = request.body; // just repete body in responce
+            break;
+
+        case PUT:
+            responce.headers = "HTTP/1.1 405 Bruh va che PUT non so ancora gestirlo";
             responce.contenuto = request.body; // just repete body in responce
             break;
     
